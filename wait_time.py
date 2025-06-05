@@ -1,6 +1,9 @@
 import numpy as np
 from scipy.stats import truncnorm
 import requests
+import gurobipy as gp
+from gurobipy import GRB
+
 
 # 🔑 API Key
 with open("ETA_key.txt", "r") as file:
@@ -68,13 +71,18 @@ def fetch_foursquare_info(lat, lon):
     data = response.json()
 
     if not data.get("results"):
-        return {"rating": 4.0, "review_count": 10, "density": 50, "category": "default"}
+        return {
+            "rating": 3.0,
+            "review_count": 10,
+            "density": 0.5,
+            "category": "default",
+        }
 
     result = data["results"][0]
 
-    rating = result.get("rating", 4.0)
+    rating = result.get("rating", 3.0)
     review_count = result.get("stats", {}).get("total_ratings", 10)
-    density = result.get("popularity", 50)
+    density = result.get("popularity", 0.5)
 
     category = (
         result["categories"][0]["name"].lower()
@@ -125,10 +133,76 @@ def estimate_wait_time(lat, lon, hour=None, config=config):
     std += 1 / (log_reviews + 1e-6) * config["std_review_penalty"]
     std = max(std, 0.5)
 
-    return truncated_normal_wait(
-        mean,
-        std,
-        min_val=config["min_wait"],
-        max_val=config["max_wait"],
-        samples=config["sampling_iterations"],
+    return (
+        truncated_normal_wait(
+            mean,
+            std,
+            min_val=config["min_wait"],
+            max_val=config["max_wait"],
+            samples=config["sampling_iterations"],
+        ),
+        rating,
+        density,
     )
+
+
+def optimize_and_rank_cafes(
+    cafes,
+    max_total_time,
+    min_arrival_gap,
+    priority_option="Getting as fast as possible",
+):
+    # 사전 필터링
+    filtered = []
+    for cafe in cafes:
+        total_time = (
+            cafe["eta_start_to_cafe"] + cafe["wait_time"] + cafe["eta_cafe_to_dest"]
+        )
+        if total_time <= max_total_time and cafe["eta_cafe_to_dest"] >= min_arrival_gap:
+            filtered.append(cafe)
+
+    if not filtered:
+        return None, []  # 조건 만족 X
+
+    # Gurobi 모델 설정
+    m = gp.Model("cafe_optimization")
+    m.setParam("OutputFlag", 0)
+    x = m.addVars(len(filtered), vtype=GRB.BINARY, name="x")
+    m.addConstr(gp.quicksum(x[i] for i in range(len(filtered))) == 1)
+
+    # 가중치 설정
+    if priority_option == "Less crowded if possible":
+        w_rating, w_wait, w_eta_dest, w_eta_start, w_density = 1.0, 1.0, 1.0, 1.0, 2.0
+    elif priority_option == "Better rating if possible":
+        w_rating, w_wait, w_eta_dest, w_eta_start, w_density = 2.0, 1.0, 1.0, 1.0, 1.0
+    else:
+        w_rating, w_wait, w_eta_dest, w_eta_start, w_density = 1.0, 2.0, 2.0, 2.0, 1.0
+
+    # Objective 구성 및 score 계산
+    objective = 0
+    for i, cafe in enumerate(filtered):
+        score = (
+            w_rating * (cafe["rating"] / 5.0)
+            - w_wait * (cafe["wait_time"] / 20.0)
+            - w_eta_dest * (cafe["eta_cafe_to_dest"] / 20.0)
+            - w_eta_start * (cafe["eta_start_to_cafe"] / 20.0)
+            - w_density * cafe["density"]
+        )
+        filtered[i]["score"] = round(score, 4)
+        objective += x[i] * score
+
+    m.setObjective(objective, GRB.MAXIMIZE)
+    m.optimize()
+
+    best_cafe = None
+    if m.Status == GRB.OPTIMAL:
+        for i in range(len(filtered)):
+            filtered[i]["is_best"] = bool(x[i].X > 0.5)
+            if x[i].X > 0.5:
+                filtered[i]["score"] = round(objective.getValue(), 4)
+                best_cafe = filtered[i]
+    else:
+        print("❌ Optimization failed with status:", m.Status)
+
+    sorted_cafes = sorted(filtered, key=lambda x: x["score"], reverse=True)
+    return best_cafe, sorted_cafes
