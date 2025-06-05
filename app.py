@@ -31,7 +31,12 @@ if start_coords and end_coords:
     ).add_to(m)
     st_folium(m, width=700, height=500)
 
-    schedule_time = st.time_input("⏰ What time does your schedule start?")
+    if "schedule_time" not in st.session_state:
+        st.session_state.schedule_time = (datetime.now() + timedelta(hours=1)).time()
+
+    st.time_input("⏰ What time does your schedule start?", key="schedule_time")
+
+    schedule_time = st.session_state.schedule_time
 
     buffer_minutes = st.slider(
         "🚶 How many minutes early would you like to arrive?",
@@ -63,9 +68,25 @@ if start_coords and end_coords:
 
     if confirm_button:
         with st.spinner("📡 Finding nearby cafes..."):
-            cafes = find_nearby_cafes(
+            cafes_end = find_nearby_cafes(
                 end_coords[0], end_coords[1], radius_m=800, limit=5
             )
+            cafes_start = find_nearby_cafes(
+                start_coords[0], start_coords[1], radius_m=800, limit=5
+            )
+
+            def cafe_key(cafe):
+                return (cafe["name"], round(cafe["lat"], 5), round(cafe["lon"], 5))
+
+            seen = set()
+            deduped_cafes = []
+            for cafe in cafes_end + cafes_start:
+                key = cafe_key(cafe)
+                if key not in seen:
+                    seen.add(key)
+                    deduped_cafes.append(cafe)
+
+            cafes = deduped_cafes
 
         if cafes:
             with st.spinner("⏱️ Calculating ETA..."):

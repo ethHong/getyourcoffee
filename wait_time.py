@@ -12,15 +12,15 @@ with open("ETA_key.txt", "r") as file:
 # ⚙️ Configuration
 config = {
     "time_baseline": {
-        "morning": 2.5,
-        "lunch": 11.0,
-        "afternoon": 4.0,
-        "evening": 6.0,
-        "night": 2.0,
+        "morning": 3.0,
+        "lunch": 10.0,
+        "afternoon": 2.0,
+        "evening": 5.0,
+        "night": 1.0,
     },
     "category_weights": {
         "university": 1.4,
-        "residential": 0.6,
+        "residential": 0.5,
         "office": 1.3,
         "mall": 1.2,
         "default": 1.0,
