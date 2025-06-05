@@ -54,6 +54,9 @@ if start_coords and end_coords:
         minutes=buffer_minutes
     )
     st.write(f"🎯 You should arrive by: **{deadline_datetime.time()}**")
+    # How many minutes left?
+    minutes_left = round((deadline_datetime - datetime.now()).total_seconds() / 60.0, 2)
+    st.write(f"⏱️ You have {minutes_left} minutes left")
 
     # ☕️ Step 2: Confirm and find cafes
     confirm_button = st.button("🚀 Confirm route and find nearby cafes")
