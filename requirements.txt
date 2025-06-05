@@ -1,0 +1,6 @@
+streamlit
+geopy
+folium
+streamlit-folium
+requests
+openrouteservice 
