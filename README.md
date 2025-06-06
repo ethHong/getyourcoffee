@@ -77,10 +77,12 @@ Let:
 ### 📌 Constraints
 
 - **Only one coffee shop can be selected**:
-  \[
+  $$
   \sum_{i=1}^{n} x_i = 1
-  \]
+  $$
+  
 - **Feasibility filter**: Only cafes that satisfy the following conditions are considered:
+  
   - Total time from start → cafe → wait → destination ≤ `max_total_time`
   - ETA from cafe to destination ≥ `min_arrival_gap`
 
@@ -94,8 +96,6 @@ The model maximizes a **custom utility score** that balances multiple factors su
 - 🧑‍🤝‍🧑 Density or crowdedness (lower is better)
 
 For each cafe \( i \), the utility score \( S_i \) is calculated as:
-
-
 $$
 S_i = w_r \cdot \frac{\text{rating}_i}{5} - 
       w_w \cdot \frac{\text{wait}_i}{20} -
@@ -103,8 +103,6 @@ S_i = w_r \cdot \frac{\text{rating}_i}{5} -
       w_s \cdot \frac{\text{eta}_{\text{start→cafe},i}}{20} -
       w_c \cdot \text{density}_i
 $$
-
-
 Where:
 - $w_r$: Weight for rating
 - $w_w$: Weight for wait time
@@ -118,7 +116,6 @@ The objective is:
 $$
 \max \sum_{i=1}^{n} x_i \cdot S_i
 $$
-
 
 ### 🧠 Solver
 
