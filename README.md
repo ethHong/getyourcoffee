@@ -91,9 +91,9 @@ The model maximizes a **custom utility score** that balances multiple factors su
 - 🧑‍🤝‍🧑 Density or crowdedness (lower is better)
 
 For each cafe \( i \), the utility score \( S_i \) is calculated as:
-$$
-S_i = w_r \cdot \frac{\text{rating}_i}{5} - w_w \cdot \frac{\text{wait}_i}{20} -w_d \cdot \frac{\text{eta}_{\text{cafe→dest},i}}{20} - w_s \cdot \frac{\text{eta}_{\text{start→cafe},i}}{20} - w_c \cdot \text{density}_i
-$$
+
+$S_i = w_r \cdot \frac{\text{rating}_i}{5} - w_w \cdot \frac{\text{wait}_i}{20} -w_d \cdot \frac{\text{eta}_{\text{cafe→dest},i}}{20} - w_s \cdot \frac{\text{eta}_{\text{start→cafe},i}}{20} - w_c \cdot \text{density}_i$
+
 Where:
 - $w_r$: Weight for rating
 - $w_w$: Weight for wait time
@@ -172,9 +172,9 @@ Coffee wait times often exhibit characteristics like:
 - Saturation and flattening as the system reaches its capacity.
 
 These are signature traits of an **S-shaped response curve**, where a small increase in input (e.g., crowd density or proximity to noon) can cause a **rapid jump in wait time** near the inflection point, but show limited change before/after that.
-$$
-\text{WaitTime}(x) = \frac{L}{1 + e^{-k(x - x_0)}} + \text{offset}
-$$
+
+$\text{WaitTime}(x) = \frac{L}{1 + e^{-k(x - x_0)}} + \text{offset}$
+
 Where:
 - $x$: composite delay score
 - $L$: maximum contribution of congestion to wait time
@@ -197,10 +197,9 @@ Similarly, **coffee wait time patterns are highly structured** (e.g., dominated 
 The score \( x \) is calculated by aggregating:
 
 The score \( x \) is calculated by aggregating:
-$$
-x = \alpha_1 \cdot \tilde{D} + \alpha_2 \cdot \tilde{P} + \alpha_3 \cdot \frac{1}{R} + \alpha_4 \cdot \frac{B}{10}
-\
-$$
+
+$x = \alpha_1 \cdot \tilde{D} + \alpha_2 \cdot \tilde{P} + \alpha_3 \cdot \frac{1}{R} + \alpha_4 \cdot \frac{B}{10}$
+
 Where:
 
 - $\tilde{D}$: **Stretched Density**

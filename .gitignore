@@ -2,6 +2,7 @@
 api_key.txt
 ETA_key.txt
 *.key
+*.txt
 .env
 .env.local
 .env.production
@@ -50,7 +51,7 @@ Pipfile.lock
 
 # Jupyter Notebook
 .ipynb_checkpoints
-.ipynb
+*.ipynb
 
 # OS Generated
 .DS_Store
