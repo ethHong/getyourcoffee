@@ -122,7 +122,7 @@ def optimize_and_rank_cafes(
     min_arrival_gap,
     priority_option="Getting as fast as possible",
 ):
-    # 사전 필터링
+
     filtered = []
     for cafe in cafes:
         total_time = (
@@ -132,15 +132,13 @@ def optimize_and_rank_cafes(
             filtered.append(cafe)
 
     if not filtered:
-        return None, []  # 조건 만족 X
+        return None, []
 
-    # Gurobi 모델 설정
     m = gp.Model("cafe_optimization")
     m.setParam("OutputFlag", 0)
     x = m.addVars(len(filtered), vtype=GRB.BINARY, name="x")
     m.addConstr(gp.quicksum(x[i] for i in range(len(filtered))) == 1)
 
-    # 가중치 설정
     if priority_option == "Less crowded if possible":
         w_rating, w_wait, w_eta_dest, w_eta_start, w_density = 1.0, 1.0, 1.0, 1.0, 2.0
     elif priority_option == "Better rating if possible":
