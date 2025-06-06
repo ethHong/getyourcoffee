@@ -38,6 +38,13 @@ if start_coords and end_coords:
 
     schedule_time = st.session_state.schedule_time
 
+    now = datetime.now()
+    schedule_datetime = datetime.combine(now.date(), schedule_time)
+
+    # 만약 선택한 시간이 현재보다 과거라면 → 내일로 계산
+    if schedule_datetime < now:
+        schedule_datetime += timedelta(days=1)
+
     buffer_minutes = st.slider(
         "🚶 How many minutes early would you like to arrive?",
         min_value=0,
@@ -45,6 +52,8 @@ if start_coords and end_coords:
         value=5,
         step=1,
     )
+
+    deadline_datetime = schedule_datetime - timedelta(minutes=buffer_minutes)
 
     priority = st.selectbox(
         "🔍 What is your priority?",
@@ -55,9 +64,6 @@ if start_coords and end_coords:
         ],
     )
 
-    deadline_datetime = datetime.combine(datetime.today(), schedule_time) - timedelta(
-        minutes=buffer_minutes
-    )
     st.write(f"🎯 You should arrive by: **{deadline_datetime.time()}**")
     # How many minutes left?
     minutes_left = round((deadline_datetime - datetime.now()).total_seconds() / 60.0, 2)
@@ -97,7 +103,7 @@ if start_coords and end_coords:
                     eta1 = get_eta_minutes(start_coords, (cafe["lat"], cafe["lon"]))
                     eta2 = get_eta_minutes((cafe["lat"], cafe["lon"]), end_coords)
                     # wait_time = 5  # TODO: Replace with wait-time proxy later
-                    wait_time, rating, density = estimate_wait_time(
+                    wait_time, rating, density, sf = estimate_wait_time_curvemodel(
                         cafe["lat"], cafe["lon"], hour=datetime.now().hour
                     )
 
@@ -116,6 +122,7 @@ if start_coords and end_coords:
                                 "index": idx + 1,
                                 "rating": rating,
                                 "density": density,
+                                "SF": sf,
                             }
                         )
                         # st.success(f"✅ Successfully added {cafe['name']} (Total: {total_time} min)")
@@ -157,6 +164,9 @@ if start_coords and end_coords:
                                 st.metric(
                                     "🚶 ETA to Cafe", f"{cafe['eta_start_to_cafe']} min"
                                 )
+                                # If less than 5 minutes, show as < 5 min
+                                if cafe["wait_time"] <= 3:
+                                    st.metric("⌛ Wait Time", "< 3 min")
                                 st.metric("⌛ Wait Time", f"{cafe['wait_time']} min")
                                 st.metric(
                                     "📍 ETA to Destination",
@@ -174,6 +184,7 @@ if start_coords and end_coords:
                                     - ✅ **Constraints**:
                                         - Total time ≤ {int(available_time)} min
                                         - Arrive ≥ {buffer_minutes} min early
+                                    - SF: {cafe.get('SF', 'N/A')}
                                     """
                                 )
 

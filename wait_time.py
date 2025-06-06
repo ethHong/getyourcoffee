@@ -10,20 +10,13 @@ with open("ETA_key.txt", "r") as file:
     FOURSQUARE_API_KEY = file.read().strip()
 
 # ⚙️ Configuration
-config = {
+statistical_config = {
     "time_baseline": {
         "morning": 3.0,
         "lunch": 10.0,
         "afternoon": 2.0,
         "evening": 5.0,
         "night": 1.0,
-    },
-    "category_weights": {
-        "university": 1.4,
-        "residential": 0.5,
-        "office": 1.3,
-        "mall": 1.2,
-        "default": 1.0,
     },
     "rating_weight": 0.25,
     "log_reviews_weight": 0.25,
@@ -72,43 +65,22 @@ def fetch_foursquare_info(lat, lon):
 
     if not data.get("results"):
         return {
-            "rating": 3.0,
-            "review_count": 10,
-            "density": 0.5,
-            "category": "default",
+            "rating": 5.0,
+            "density": 0.9,
         }
 
     result = data["results"][0]
 
-    rating = result.get("rating", 3.0)
-    review_count = result.get("stats", {}).get("total_ratings", 10)
-    density = result.get("popularity", 0.5)
-
-    category = (
-        result["categories"][0]["name"].lower()
-        if result.get("categories")
-        else "default"
-    )
-    if "university" in category:
-        category_key = "university"
-    elif "residential" in category:
-        category_key = "residential"
-    elif "office" in category or "corporate" in category:
-        category_key = "office"
-    elif "mall" in category:
-        category_key = "mall"
-    else:
-        category_key = "default"
+    rating = result.get("rating", 5.0)
+    density = result.get("popularity", 0.9)
 
     return {
         "rating": rating,
-        "review_count": review_count,
         "density": density,
-        "category": category_key,
     }
 
 
-def estimate_wait_time(lat, lon, hour=None, config=config):
+def estimate_wait_time_statmodel(lat, lon, hour=None, config=statistical_config):
     info = fetch_foursquare_info(lat, lon)
 
     rating = max(info.get("rating", 4.0), 1.0)
@@ -116,14 +88,12 @@ def estimate_wait_time(lat, lon, hour=None, config=config):
 
     log_reviews = np.log1p(review_count)
     density = info["density"]
-    category = info["category"]
 
     hour = hour or int(np.datetime64("now", "h").astype(int) % 24)
     time_slot = get_time_slot(hour)
     base_mean = config["time_baseline"].get(time_slot, 5)
-    category_weight = config["category_weights"].get(category, 1.0)
 
-    mean = base_mean * category_weight
+    mean = base_mean
     mean += (rating - 4) * config["rating_weight"]
     mean += log_reviews * config["log_reviews_weight"]
     mean += density * config["density_weight"]
@@ -206,3 +176,68 @@ def optimize_and_rank_cafes(
 
     sorted_cafes = sorted(filtered, key=lambda x: x["score"], reverse=True)
     return best_cafe, sorted_cafes
+
+
+### Wait time based on Baseline Model - Sigmoid
+model_config = {
+    "time_baseline": {
+        "morning": 7.0,
+        "lunch": 10.0,
+        "afternoon": 5.0,
+        "evening": 3.0,
+        "night": 1.0,
+    },
+    "PEAK_TIMES": {
+        "lunch": 12,
+        "evening": 18,
+    },
+}
+
+
+def proximity_weight(hour, peak_hours):
+    min_diff = min(abs(hour - ph) for ph in peak_hours)
+    return np.exp(-0.3 * min_diff)
+
+
+def compute_score_factor(info, hour, config=model_config):
+    time_slot = get_time_slot(hour)
+    time_baseline = config["time_baseline"].get(time_slot, 5.0)
+    peak_hours = list(config["PEAK_TIMES"].values())
+
+    rating = max(info.get("rating", 4.0), 1.0)
+    density = info.get("density", 0.5)
+    proximity = proximity_weight(hour, peak_hours)
+
+    stretched_density = (density - 0.9) * 10
+    stretched_density = max(0.0, min(stretched_density, 1.0))
+    curved_proximity = 1.0 / (1.0 + np.exp(-5 * (proximity - 0.5)))
+    inverse_rating = 1.0 / rating
+
+    score = (
+        2.0 * stretched_density
+        + 3.0 * curved_proximity
+        + 1.5 * inverse_rating
+        + 2.0 * (time_baseline / 10.0)
+    )
+
+    return score, rating, density, proximity
+
+
+def logistic_sigmoid(x, L=10.83, k=5.00, x0=4.45, offset=3.00):
+    return L / (1 + np.exp(-k * (x - x0))) + offset
+
+
+def predict_wait_time(score, L=10.83, k=5.00, x0=4.45, offset=3.00):
+    return logistic_sigmoid(score, L=L, k=k, x0=x0, offset=offset)
+
+
+# 3. Wait Time
+def estimate_wait_time_curvemodel(lat, lon, hour=None, config=model_config):
+    info = fetch_foursquare_info(lat, lon)
+    hour = hour or int(np.datetime64("now", "h").astype(int) % 24)
+
+    # sf, rating, density, review_count = compute_score_factor(info, hour, config)
+    sf, rating, density, proximity = compute_score_factor(info, hour, config)
+    wait_time = round(predict_wait_time(sf), 2)
+
+    return (wait_time, rating, density, sf)
