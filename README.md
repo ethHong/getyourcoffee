@@ -76,13 +76,8 @@ Let:
 
 ### 📌 Constraints
 
-- **Only one coffee shop can be selected**:
-  $$
-  \sum_{i=1}^{n} x_i = 1
-  $$
-  
+- **Only one coffee shop can be selected**: $\sum_{i=1}^{n} x_i = 1$
 - **Feasibility filter**: Only cafes that satisfy the following conditions are considered:
-  
   - Total time from start → cafe → wait → destination ≤ `max_total_time`
   - ETA from cafe to destination ≥ `min_arrival_gap`
 
@@ -97,11 +92,7 @@ The model maximizes a **custom utility score** that balances multiple factors su
 
 For each cafe \( i \), the utility score \( S_i \) is calculated as:
 $$
-S_i = w_r \cdot \frac{\text{rating}_i}{5} - 
-      w_w \cdot \frac{\text{wait}_i}{20} -
-      w_d \cdot \frac{\text{eta}_{\text{cafe→dest},i}}{20} -
-      w_s \cdot \frac{\text{eta}_{\text{start→cafe},i}}{20} -
-      w_c \cdot \text{density}_i
+S_i = w_r \cdot \frac{\text{rating}_i}{5} - w_w \cdot \frac{\text{wait}_i}{20} -w_d \cdot \frac{\text{eta}_{\text{cafe→dest},i}}{20} - w_s \cdot \frac{\text{eta}_{\text{start→cafe},i}}{20} - w_c \cdot \text{density}_i
 $$
 Where:
 - $w_r$: Weight for rating
@@ -112,10 +103,7 @@ Where:
 
 These weights vary depending on the selected user **priority_option**.
 
-The objective is:
-$$
-\max \sum_{i=1}^{n} x_i \cdot S_i
-$$
+The objective is: $\max \sum_{i=1}^{n} x_i \cdot S_i$
 
 ### 🧠 Solver
 
@@ -188,11 +176,11 @@ $$
 \text{WaitTime}(x) = \frac{L}{1 + e^{-k(x - x_0)}} + \text{offset}
 $$
 Where:
-- \( x \): composite delay score
-- \( L \): maximum contribution of congestion to wait time
-- \( k \): steepness of the curve
-- \( x_0 \): score value at the inflection point
-- \( \text{offset} \): minimum base wait time
+- $x$: composite delay score
+- $L$: maximum contribution of congestion to wait time
+- $k$: steepness of the curve
+- $x_0$: score value at the inflection point
+- $\text{offset}$: minimum base wait time
 
 ### Note: Inspired by Adburg Method
 
@@ -209,57 +197,14 @@ Similarly, **coffee wait time patterns are highly structured** (e.g., dominated 
 The score \( x \) is calculated by aggregating:
 
 The score \( x \) is calculated by aggregating:
-
-\[
+$$
 x = \alpha_1 \cdot \tilde{D} + \alpha_2 \cdot \tilde{P} + \alpha_3 \cdot \frac{1}{R} + \alpha_4 \cdot \frac{B}{10}
-\]
-
+\
+$$
 Where:
 
-- \( \tilde{D} \): **Stretched Density**
-- \( \tilde{P} \): **Sigmoid-transformed Proximity to Peak Time**
-- \( R \): **Rating**
-- \( B \): **Baseline wait time** for the current time slot (e.g., lunch, afternoon)
-- \( \alpha_1, \alpha_2, \alpha_3, \alpha_4 \): weights set heuristically
-
----
-
-### 🔍 Component Breakdown
-
-**1. Stretched Density \( \tilde{D} \):**
-
-\[
-\tilde{D} = \text{clip}((\text{density} - 0.9) \times 10,\ 0.0,\ 1.0)
-\]
-
-- Normalizes density into [0, 1], focusing on congested situations (density > 0.9)
-- Ensures low-density cafés are not penalized
-
----
-
-**2. Curved Proximity \( \tilde{P} \):**
-
-\[
-\tilde{P} = \frac{1}{1 + e^{-5(\text{proximity} - 0.5)}}
-\]
-
-- Applies a sigmoid transformation to the proximity to peak hour
-- Captures sharp increase in congestion as time approaches lunch/evening peaks
-
----
-
-**3. Inverse Rating \( \frac{1}{R} \):**
-
-\[
-\frac{1}{\text{rating}}
-\]
-
-- Penalizes low-rated cafés
-- Higher ratings lead to lower penalty (e.g., 1/5 = 0.2 vs. 1/2.5 = 0.4)
-
----
-
-**4. Time-Slot Baseline \( \frac{B}{10} \):**
-
-- Baseline wait time (e.g., lunch = 10) normalized to [0, 1]
-- Reflects overall traffic expectation for the current time of day
+- $\tilde{D}$: **Stretched Density**
+- $\tilde{P}$: **Sigmoid-transformed Proximity to Peak Time**
+- $R$: **Rating**
+- $B$: **Baseline wait time** for the current time slot (e.g., lunch, afternoon)
+- $\alpha_1, \alpha_2, \alpha_3, \alpha_4$: weights set heuristically
