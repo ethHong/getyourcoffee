@@ -146,7 +146,6 @@ def optimize_and_rank_cafes(
     else:
         w_rating, w_wait, w_eta_dest, w_eta_start, w_density = 1.0, 2.0, 2.0, 2.0, 1.0
 
-    # Objective 구성 및 score 계산
     objective = 0
     for i, cafe in enumerate(filtered):
         score = (
