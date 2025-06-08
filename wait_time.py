@@ -144,17 +144,17 @@ def optimize_and_rank_cafes(
     x = m.addVars(len(filtered), vtype=GRB.BINARY, name="x")
     m.addConstr(gp.quicksum(x[i] for i in range(len(filtered))) == 1)
 
-    if priority_option == "Less crowded if possible":
-        w_rating, w_wait, w_eta_dest, w_eta_start, w_density = 1.0, 1.0, 1.0, 1.0, 2.0
-    elif priority_option == "Better rating if possible":
-        w_rating, w_wait, w_eta_dest, w_eta_start, w_density = 2.0, 1.0, 1.0, 1.0, 1.0
+    if "crowded" in priority_option.lower():
+        w_rating, w_wait, w_eta_dest, w_eta_start, w_density = 1.0, 1.0, 1.0, 1.0, 4.0
+    elif "rating" in priority_option.lower():
+        w_rating, w_wait, w_eta_dest, w_eta_start, w_density = 4.0, 1.0, 1.0, 1.0, 1.0
     else:
         w_rating, w_wait, w_eta_dest, w_eta_start, w_density = 1.0, 2.0, 2.0, 2.0, 1.0
 
     objective = 0
     for i, cafe in enumerate(filtered):
         score = (
-            w_rating * (cafe["rating"] / 5.0)
+            w_rating * (cafe["rating"])
             - w_wait * (cafe["wait_time"] / 20.0)
             - w_eta_dest * (cafe["eta_cafe_to_dest"] / 20.0)
             - w_eta_start * (cafe["eta_start_to_cafe"] / 20.0)
