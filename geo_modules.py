@@ -36,7 +36,9 @@ def get_location_from_query(
             else:
                 st.warning("No results found.")
         except Exception as e:
-            st.error(f"Geocoding error: {e}")
+            st.error(
+                f"⚠️ Service temprarily anavailable due to high usage! Please try later : {e}"
+            )
             return None, None
 
     results = st.session_state.get(f"{label}_result")
