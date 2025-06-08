@@ -193,6 +193,8 @@ if st.session_state["map_drawn"]:
                                     f"{cafe['eta_cafe_to_dest']} min",
                                 )
 
+                            link_googlemap = f"https://www.google.com/maps/search/?api=1&query={cafe["lat"]},{cafe["lon"]}"
+
                             with col2:
                                 st.write("### 🧠 Optimization Factors")
                                 st.markdown(
@@ -205,6 +207,7 @@ if st.session_state["map_drawn"]:
                                         - Total time ≤ {int(available_time)} min
                                         - Arrive ≥ {buffer_minutes} min early
                                     - ⏱️ Wait time Score Factor: {round(float(cafe.get('SF')), 2)}
+                                    - 📍 **Google Maps**: [Open Map]({link_googlemap})
                                     """
                                 )
 
