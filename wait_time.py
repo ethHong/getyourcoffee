@@ -5,7 +5,7 @@ import streamlit as st
 
 # import gurobipy as gp
 # from gurobipy import GRB
-from model_update.train_NN_model import GeneralizedSigmoid
+from NN_model import GeneralizedSigmoid
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -124,10 +124,6 @@ def estimate_wait_time_statmodel(lat, lon, hour=None, config=statistical_config)
         rating,
         density,
     )
-
-
-from scipy.optimize import linprog
-import numpy as np
 
 
 def optimize_and_rank_cafes(
@@ -276,41 +272,6 @@ model_config = {
 }
 
 
-def transform_input_factor(info, hour, config):
-
-    output = np.zeros(8)
-
-    peak_hours = list(config["PEAK_TIMES"].values())
-
-    rating = max(info.get("rating", 4.0), 1.0)
-    density = info.get("density", 0.5)
-    proximity = proximity_weight(hour, peak_hours)
-    stretched_density = (density - 0.9) * 10
-
-    stretched_density = max(0.0, min(stretched_density, 1.0))
-    curved_proximity = np.log1p(5 * proximity)
-    inverse_rating = 1.0 / rating
-
-    time_slot = get_time_slot(hour)
-    if time_slot == "afternoon":
-        time_onehot_index = 0
-    elif time_slot == "evening":
-        time_onehot_index = 1
-    elif time_slot == "lunch":
-        time_onehot_index = 2
-    elif time_slot == "morning":
-        time_onehot_index = 3
-    else:
-        time_onehot_index = 4
-
-    output[0] = inverse_rating
-    output[1] = stretched_density
-    output[2] = curved_proximity
-    output[time_onehot_index + 3] = 1.0  # One-hot encoding for time slot
-
-    return output, rating, density
-
-
 model = GeneralizedSigmoid(input_dim=8)
 model.load_state_dict(torch.load("sigmoid_model.pt"))
 
@@ -370,3 +331,38 @@ def plot_time_distributions(sorted_cafes, model):
         ax.grid(True)
         ax.legend()
         st.pyplot(fig)
+
+
+def transform_input_factor(info, hour, config):
+
+    output = np.zeros(8)
+
+    peak_hours = list(config["PEAK_TIMES"].values())
+
+    rating = max(info.get("rating", 4.0), 1.0)
+    density = info.get("density", 0.5)
+    proximity = proximity_weight(hour, peak_hours)
+    stretched_density = (density - 0.9) * 10
+
+    stretched_density = max(0.0, min(stretched_density, 1.0))
+    curved_proximity = np.log1p(5 * proximity)
+    inverse_rating = 1.0 / rating
+
+    time_slot = get_time_slot(hour)
+    if time_slot == "afternoon":
+        time_onehot_index = 0
+    elif time_slot == "evening":
+        time_onehot_index = 1
+    elif time_slot == "lunch":
+        time_onehot_index = 2
+    elif time_slot == "morning":
+        time_onehot_index = 3
+    else:
+        time_onehot_index = 4
+
+    output[0] = inverse_rating
+    output[1] = stretched_density
+    output[2] = curved_proximity
+    output[time_onehot_index + 3] = 1.0  # One-hot encoding for time slot
+
+    return output, rating, density

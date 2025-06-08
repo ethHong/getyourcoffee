@@ -4,45 +4,7 @@ import torch.optim as optim
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from wait_time import *
-
-
-class GeneralizedSigmoid(nn.Module):
-    def __init__(self, input_dim):
-        super().__init__()
-        self.linear = nn.Linear(input_dim, 1)  # w^T * x + b
-
-        # Generalized sigmoid parameters: L, k, x0, offset (all learnable)
-        self.L = nn.Parameter(torch.tensor(15.0))  # Max value
-        self.k = nn.Parameter(torch.tensor(1.0))  # Slope
-        self.x0 = nn.Parameter(torch.tensor(0.0))  # Midpoint
-        self.offset = nn.Parameter(torch.tensor(0.0))  # Minimum value
-
-    def forward(self, x):
-        z = self.linear(x)  # Linear transformation
-        sigmoid_output = self.L / (1 + torch.exp(-self.k * (z - self.x0))) + self.offset
-        return sigmoid_output
-
-
-def transform_input_factor(info, hour, config):
-
-    peak_hours = list(config["PEAK_TIMES"].values())
-
-    rating = max(info.get("rating", 4.0), 1.0)
-    density = info.get("density", 0.5)
-    proximity = proximity_weight(hour, peak_hours)
-    stretched_density = (density - 0.9) * 10
-
-    stretched_density = max(0.0, min(stretched_density, 1.0))
-    curved_proximity = np.log1p(5 * proximity)
-    inverse_rating = 1.0 / rating
-
-    return {
-        "transformed_rating": inverse_rating,
-        "transformed_density": stretched_density,
-        "transformed_proximity": curved_proximity,
-    }
-
+from NN_model import *
 
 # Load train data
 df_long = pd.read_csv("baseline_train_data.csv")
@@ -109,5 +71,5 @@ plt.show()
 # Save the model:
 date_now = pd.Timestamp.now().strftime("%Y-%m-%d_%H-%M-%S")
 model_name = f"sigmoid_model_{date_now}.pt"
-torch.save(model.state_dict(), f"{model_name}")
+torch.save(model.state_dict(), f"model_update/{model_name}")
 print(f"Model saved as {model_name}")

@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 streamlit = "*"
+torch = "*"
 geopy = "*"
 folium = "*"
 streamlit-folium = "*"
@@ -12,8 +13,7 @@ requests = "*"
 openrouteservice = "*"
 
 [dev-packages]
-ipykernel = "*"
 
 [requires]
-python_version = "3.8"
-python_full_version = "3.8.2"
+python_version = "3.12"
+python_full_version = "3.12.4"
