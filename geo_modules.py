@@ -8,9 +8,10 @@ from geopy.distance import geodesic
 import openrouteservice
 
 # Read api_key.txt
-with open("api_key.txt", "r") as file:
-    ORS_API_KEY = file.read().strip()
+# with open("api_key.txt", "r") as file:
+#    ORS_API_KEY = file.read().strip()
 
+ORS_API_KEY = st.secrets.get("ORS_API_KEY", None)
 ors_client = openrouteservice.Client(key=ORS_API_KEY)
 
 

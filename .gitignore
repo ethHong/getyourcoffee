@@ -7,6 +7,8 @@ ETA_key.txt
 .env.local
 .env.production
 secrets.json
+*.toml
+*.streamlit
 
 # Python
 __pycache__/

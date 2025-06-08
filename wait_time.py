@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats import truncnorm
 import requests
+import streamlit as st
 
 # import gurobipy as gp
 # from gurobipy import GRB
@@ -13,8 +14,10 @@ import streamlit as st
 from scipy.optimize import linprog
 
 # 🔑 API Key
-with open("ETA_key.txt", "r") as file:
-    FOURSQUARE_API_KEY = file.read().strip()
+# with open("ETA_key.txt", "r") as file:
+#    FOURSQUARE_API_KEY = file.read().strip()
+
+FOURSQUARE_API_KEY = st.secrets.get("FOURSQUARE_API_KEY", None)
 
 # ⚙️ Configuration
 statistical_config = {
