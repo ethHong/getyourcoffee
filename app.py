@@ -195,7 +195,10 @@ if st.session_state["map_drawn"]:
                                 # If less than 5 minutes, show as < 5 min
                                 if cafe["wait_time"] <= 3:
                                     st.metric("⌛ Wait Time", "< 3 min")
-                                st.metric("⌛ Wait Time", f"{cafe['wait_time']} min")
+                                else:
+                                    st.metric(
+                                        "⌛ Wait Time", f"{cafe['wait_time']} min"
+                                    )
                                 st.metric(
                                     "📍 ETA to Destination",
                                     f"{cafe['eta_cafe_to_dest']} min",
