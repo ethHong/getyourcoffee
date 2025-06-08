@@ -94,7 +94,13 @@ The model maximizes a **custom utility score** that balances multiple factors su
 
 For each cafe \( i \), the utility score \( S_i \) is calculated as:
 
-$$S_i = w_r \cdot \frac{\text{rating}_i}{5} - w_w \cdot \frac{\text{wait}_i}{20} -w_d \cdot \frac{\text{eta}_{\text{cafe to dest},i}}{20} - w_s \cdot \frac{\text{eta}_{\text{start to cafe},i}}{20} - w_c \cdot \text{density}_i$$
+```math
+Sᵢ = w_r · (ratingᵢ / 5) 
+   - w_w · (waitᵢ / 20)
+   - w_d · (eta_{cafe→dest,ᵢ} / 20)
+   - w_s · (eta_{start→cafe,ᵢ} / 20)
+   - w_c · densityᵢ
+
 
 Where:
 - $w_r$: Weight for rating
@@ -106,6 +112,7 @@ Where:
 These weights vary depending on the selected user **priority_option**.
 
 The objective is: $\max \sum_{i=1}^{n} x_i \cdot S_i$
+```
 
 ### 🧠 Solver
 
