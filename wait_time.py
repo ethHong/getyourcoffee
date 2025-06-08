@@ -3,7 +3,12 @@ from scipy.stats import truncnorm
 import requests
 import gurobipy as gp
 from gurobipy import GRB
-
+from train_NN_model import GeneralizedSigmoid
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import matplotlib.pyplot as plt
+import streamlit as st
 
 # 🔑 API Key
 with open("ETA_key.txt", "r") as file:
@@ -238,3 +243,108 @@ def estimate_wait_time_curvemodel(lat, lon, hour=None, config=model_config):
     wait_time = round(predict_wait_time(sf), 2)
 
     return (wait_time, rating, density, sf)
+
+
+#### From here: NN model
+model_config = {
+    "PEAK_TIMES": {
+        "lunch": 12,
+        "evening": 18,
+    },
+}
+
+
+def transform_input_factor(info, hour, config):
+
+    output = np.zeros(8)
+
+    peak_hours = list(config["PEAK_TIMES"].values())
+
+    rating = max(info.get("rating", 4.0), 1.0)
+    density = info.get("density", 0.5)
+    proximity = proximity_weight(hour, peak_hours)
+    stretched_density = (density - 0.9) * 10
+
+    stretched_density = max(0.0, min(stretched_density, 1.0))
+    curved_proximity = np.log1p(5 * proximity)
+    inverse_rating = 1.0 / rating
+
+    time_slot = get_time_slot(hour)
+    if time_slot == "afternoon":
+        time_onehot_index = 0
+    elif time_slot == "evening":
+        time_onehot_index = 1
+    elif time_slot == "lunch":
+        time_onehot_index = 2
+    elif time_slot == "morning":
+        time_onehot_index = 3
+    else:
+        time_onehot_index = 4
+
+    output[0] = inverse_rating
+    output[1] = stretched_density
+    output[2] = curved_proximity
+    output[time_onehot_index + 3] = 1.0  # One-hot encoding for time slot
+
+    return output, rating, density
+
+
+model = GeneralizedSigmoid(input_dim=8)
+model.load_state_dict(torch.load("sigmoid_model.pt"))
+
+
+def predict_wait_time_NN(input_data, model=model):
+    model.eval()
+    with torch.no_grad():
+        x_tensor = torch.tensor(input_data).float().unsqueeze(0)  # (1, input_dim)
+
+        # z = w^T x + b
+        z = model.linear(x_tensor)  # (1, 1)
+        y = model.forward(x_tensor)  # predicted wait time
+
+        return y.item(), z.item()
+
+
+def estimate_wait_time_NN(lat, lon, hour=None, config=model_config):
+    info = fetch_foursquare_info(lat, lon)
+    hour = hour or int(np.datetime64("now", "h").astype(int) % 24)
+
+    # sf, rating, density, review_count = compute_score_factor(info, hour, config)
+    input_data, rating, density = transform_input_factor(info, hour, config)
+    wait_time = predict_wait_time_NN(input_data)[0]
+    score_factor = predict_wait_time_NN(input_data)[1]
+    return round(wait_time, 2), rating, density, score_factor
+
+
+def plot_time_distributions(sorted_cafes, model):
+    with torch.no_grad():
+        z_range = np.linspace(-1, 2, 300)
+        z_tensor = torch.tensor(z_range).unsqueeze(1).float()
+
+        y_smooth = (
+            model.L / (1 + torch.exp(-model.k * (z_tensor - model.x0))) + model.offset
+        )
+
+        z_data = [i["SF"] for i in sorted_cafes]
+        y_data = [i["wait_time"] for i in sorted_cafes]
+        names = [i["name"] for i in sorted_cafes]
+
+        fig, ax = plt.subplots(figsize=(8, 5))
+        ax.plot(
+            z_range,
+            y_smooth.numpy(),
+            color="red",
+            linewidth=2,
+            label="Fitted Sigmoid Curve",
+        )
+        ax.scatter(z_data, y_data, color="blue", label="Actual Wait Times", alpha=0.6)
+
+        for i, name in enumerate(names):
+            ax.annotate(name, (z_data[i], y_data[i]), fontsize=8, alpha=0.7)
+
+        ax.set_xlabel("Linear Score (z = wᵀx + b) (Higher, more likely to bw crowded)")
+        ax.set_ylabel("Predicted Wait Time based on model")
+        ax.set_title("Generalized Sigmoid Fit with Data")
+        ax.grid(True)
+        ax.legend()
+        st.pyplot(fig)

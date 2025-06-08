@@ -103,7 +103,7 @@ if start_coords and end_coords:
                     eta1 = get_eta_minutes(start_coords, (cafe["lat"], cafe["lon"]))
                     eta2 = get_eta_minutes((cafe["lat"], cafe["lon"]), end_coords)
                     # wait_time = 5  # TODO: Replace with wait-time proxy later
-                    wait_time, rating, density, sf = estimate_wait_time_curvemodel(
+                    wait_time, rating, density, sf = estimate_wait_time_NN(
                         cafe["lat"], cafe["lon"], hour=datetime.now().hour
                     )
 
@@ -151,7 +151,7 @@ if start_coords and end_coords:
                     )
 
                 rank_emojis = ["🥇", "🥈", "🥉"] + ["🏅"] * 10  # 추가 순위 대비
-
+                cafe_score_factors = []
                 if sorted_cafes:
                     for i, cafe in enumerate(sorted_cafes):
                         emoji = rank_emojis[i] if i < len(rank_emojis) else "☕"
@@ -184,13 +184,14 @@ if start_coords and end_coords:
                                     - ✅ **Constraints**:
                                         - Total time ≤ {int(available_time)} min
                                         - Arrive ≥ {buffer_minutes} min early
-                                    - SF: {cafe.get('SF', 'N/A')}
+                                    - ⏱️ Wait time Score Factor: {round(float(cafe.get('SF')), 2)}
                                     """
                                 )
 
                             st.caption(
                                 f"📍 Location: ({cafe['lat']:.5f}, {cafe['lon']:.5f})"
                             )
+
                 else:
                     # fallback best cafe
                     fallback_cafe = max(enriched_cafes, key=lambda x: x.get("score", 0))
@@ -240,6 +241,9 @@ if start_coords and end_coords:
                         st.caption(
                             f"📍 Location: ({fallback_cafe['lat']:.5f}, {fallback_cafe['lon']:.5f})"
                         )
+                # Plot Coffee Wait Time Distribution, using plot_time_distributions
+                st.markdown("### 📊 Coffee Wait Time Distribution")
+                plot_time_distributions(enriched_cafes, model=model)
 
             else:
                 st.error("All ETA calculations failed. Please try again later.")
