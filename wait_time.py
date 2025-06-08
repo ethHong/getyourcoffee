@@ -4,7 +4,7 @@ import requests
 
 # import gurobipy as gp
 # from gurobipy import GRB
-from train_NN_model import GeneralizedSigmoid
+from model_update.train_NN_model import GeneralizedSigmoid
 import torch
 import torch.nn as nn
 import torch.optim as optim
