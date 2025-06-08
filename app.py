@@ -64,7 +64,10 @@ if st.session_state["map_drawn"]:
 
     schedule_time = st.session_state.schedule_time
     now = datetime.now(tz)
-    schedule_datetime = datetime.combine(now.date(), schedule_time).replace(tzinfo=tz)
+    naive_schedule = datetime.combine(now.date(), schedule_time)
+    schedule_datetime = tz.localize(naive_schedule)
+
+    # schedule_datetime = datetime.combine(now.date(), schedule_time, tzinfo=tz)
 
     # If the schedule time is before now, assume it's for tomorrow
     if schedule_datetime < now:
@@ -79,7 +82,6 @@ if st.session_state["map_drawn"]:
     )
 
     deadline_datetime = schedule_datetime - timedelta(minutes=buffer_minutes)
-    deadline_datetime = deadline_datetime.replace(tzinfo=tz)
 
     priority = st.selectbox(
         "🔍 What is your priority?",
@@ -92,9 +94,7 @@ if st.session_state["map_drawn"]:
 
     st.write(f"🎯 You should arrive by: **{deadline_datetime.time()}**")
     # How many minutes left?
-    minutes_left = round(
-        (deadline_datetime - datetime.now(tz)).total_seconds() / 60.0, 2
-    )
+    minutes_left = round((deadline_datetime - now).total_seconds() / 60.0, 2)
     st.write(f"⏱️ You have {minutes_left} minutes left")
 
     # ☕️ Step 2: Confirm and find cafes
