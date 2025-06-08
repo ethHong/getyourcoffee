@@ -11,6 +11,9 @@ folium = "*"
 streamlit-folium = "*"
 requests = "*"
 openrouteservice = "*"
+scipy = "*"
+matplotlib = "*"
+numpy = "*"
 
 [dev-packages]
 
