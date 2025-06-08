@@ -21,6 +21,9 @@ start_coords, start_address = get_location_from_query("Where are you now?", geol
 end_coords, end_address = get_location_from_query("Where should you go?", geolocator)
 
 if start_coords and end_coords:
+    st.session_state["location_ready"] = True
+
+if st.session_state.get("location_ready"):
 
     m = folium.Map(location=start_coords, zoom_start=13)
     folium.Marker(
@@ -41,7 +44,7 @@ if start_coords and end_coords:
     now = datetime.now()
     schedule_datetime = datetime.combine(now.date(), schedule_time)
 
-    # 만약 선택한 시간이 현재보다 과거라면 → 내일로 계산
+    # If the schedule time is before now, assume it's for tomorrow
     if schedule_datetime < now:
         schedule_datetime += timedelta(days=1)
 
