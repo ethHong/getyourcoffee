@@ -1,11 +1,13 @@
 # ☕️get-your-coffee
 # Don't be late for coffee
+🔗Link: https://getyoucoffee.streamlit.app
+
 
 # Motivation
 
 Have you ever experienced ordering coffee nearby your school or office and being late for meeting / class because of long waiting time to get coffee?
 
-<img src="img/img1.png" alt="img1" style="zoom:50%;" />
+<img src="img/img1.png" alt="img1" style="zoom:30%;" />
 
 ***<u>Optimal route or ETA does not necessarily means you will get your coffee early</u>*** - it's not easy to know which coffee shop is crowded right now! You may not want to take a long detour, or go to your least favorite place to just get coffee as quickly as possible.
 
