@@ -1,14 +1,16 @@
 import numpy as np
 from scipy.stats import truncnorm
 import requests
-import gurobipy as gp
-from gurobipy import GRB
+
+# import gurobipy as gp
+# from gurobipy import GRB
 from train_NN_model import GeneralizedSigmoid
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
 import streamlit as st
+from scipy.optimize import linprog
 
 # 🔑 API Key
 with open("ETA_key.txt", "r") as file:
@@ -121,13 +123,17 @@ def estimate_wait_time_statmodel(lat, lon, hour=None, config=statistical_config)
     )
 
 
+from scipy.optimize import linprog
+import numpy as np
+
+
 def optimize_and_rank_cafes(
     cafes,
     max_total_time,
     min_arrival_gap,
     priority_option="Getting as fast as possible",
 ):
-
+    # Filter cafes based on time constraints
     filtered = []
     for cafe in cafes:
         total_time = (
@@ -139,11 +145,7 @@ def optimize_and_rank_cafes(
     if not filtered:
         return None, []
 
-    m = gp.Model("cafe_optimization")
-    m.setParam("OutputFlag", 0)
-    x = m.addVars(len(filtered), vtype=GRB.BINARY, name="x")
-    m.addConstr(gp.quicksum(x[i] for i in range(len(filtered))) == 1)
-
+    # Assign weights depending on user priority
     if "crowded" in priority_option.lower():
         w_rating, w_wait, w_eta_dest, w_eta_start, w_density = 1.0, 1.0, 1.0, 1.0, 4.0
     elif "rating" in priority_option.lower():
@@ -151,30 +153,47 @@ def optimize_and_rank_cafes(
     else:
         w_rating, w_wait, w_eta_dest, w_eta_start, w_density = 1.0, 2.0, 2.0, 2.0, 1.0
 
-    objective = 0
-    for i, cafe in enumerate(filtered):
+    # Construct the objective function coefficients (negative because linprog minimizes)
+    objective_coeffs = []
+    for cafe in filtered:
         score = (
-            w_rating * (cafe["rating"])
+            w_rating * cafe["rating"] / 5.0
             - w_wait * (cafe["wait_time"] / 20.0)
             - w_eta_dest * (cafe["eta_cafe_to_dest"] / 20.0)
             - w_eta_start * (cafe["eta_start_to_cafe"] / 20.0)
             - w_density * cafe["density"]
         )
-        filtered[i]["score"] = round(score, 4)
-        objective += x[i] * score
+        cafe["score"] = round(score, 4)
+        objective_coeffs.append(-score)  # linprog minimizes, so negate score
 
-    m.setObjective(objective, GRB.MAXIMIZE)
-    m.optimize()
+    n = len(filtered)
+
+    # Constraint: only one cafe should be selected → sum(x) == 1
+    A_eq = [np.ones(n)]
+    b_eq = [1]
+
+    # Bounds: 0 ≤ xᵢ ≤ 1 (relaxed binary)
+    bounds = [(0, 1) for _ in range(n)]
+
+    # Run linear programming optimization
+    result = linprog(
+        c=objective_coeffs,
+        A_eq=A_eq,
+        b_eq=b_eq,
+        bounds=bounds,
+        method="highs",
+    )
 
     best_cafe = None
-    if m.Status == GRB.OPTIMAL:
-        for i in range(len(filtered)):
-            filtered[i]["is_best"] = bool(x[i].X > 0.5)
-            if x[i].X > 0.5:
-                filtered[i]["score"] = round(objective.getValue(), 4)
+    if result.success:
+        x = result.x
+        for i in range(n):
+            filtered[i]["is_best"] = x[i] > 0.5
+            if x[i] > 0.5:
+                filtered[i]["score"] = round(-result.fun, 4)
                 best_cafe = filtered[i]
     else:
-        print("❌ Optimization failed with status:", m.Status)
+        print("❌ Optimization failed:", result.message)
 
     sorted_cafes = sorted(filtered, key=lambda x: x["score"], reverse=True)
     return best_cafe, sorted_cafes

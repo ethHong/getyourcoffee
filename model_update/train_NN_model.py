@@ -109,5 +109,5 @@ plt.show()
 # Save the model:
 date_now = pd.Timestamp.now().strftime("%Y-%m-%d_%H-%M-%S")
 model_name = f"sigmoid_model_{date_now}.pt"
-torch.save(model.state_dict(), f"model_update/{model_name}")
+torch.save(model.state_dict(), f"{model_name}")
 print(f"Model saved as {model_name}")
