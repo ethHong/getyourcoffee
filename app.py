@@ -7,6 +7,7 @@ import requests
 from geopy.distance import geodesic
 from geo_modules import *
 from wait_time import *
+import time
 
 st.set_page_config(layout="centered")
 
@@ -20,27 +21,40 @@ st.markdown("### 📍 Step 1: Enter your locations")
 start_coords, start_address = get_location_from_query("Where are you now?", geolocator)
 end_coords, end_address = get_location_from_query("Where should you go?", geolocator)
 
-if start_coords and end_coords:
+
+if "location_ready" not in st.session_state:
+    st.session_state["location_ready"] = False
+if "map_drawn" not in st.session_state:
+    st.session_state["map_drawn"] = False
+
+
+if start_coords and end_coords and not st.session_state["location_ready"]:
     st.session_state["location_ready"] = True
+    st.rerun()
 
-if st.session_state.get("location_ready"):
+if st.session_state["location_ready"] and not st.session_state["map_drawn"]:
+    with st.spinner("📍 verifying location"):
+        m = folium.Map(location=start_coords, zoom_start=13)
+        folium.Marker(
+            start_coords, tooltip="Start", icon=folium.Icon(color="green")
+        ).add_to(m)
+        folium.Marker(
+            end_coords, tooltip="Destination", icon=folium.Icon(color="red")
+        ).add_to(m)
+        st_folium(m, width=700, height=500)
+        # Show loading spinner
 
-    m = folium.Map(location=start_coords, zoom_start=13)
-    folium.Marker(
-        start_coords, tooltip="Start", icon=folium.Icon(color="green")
-    ).add_to(m)
-    folium.Marker(
-        end_coords, tooltip="Destination", icon=folium.Icon(color="red")
-    ).add_to(m)
-    st_folium(m, width=700, height=500)
+        time.sleep(1)  # Wait for the map to render properly
 
+    st.session_state["map_drawn"] = True
+
+if st.session_state["map_drawn"]:
     if "schedule_time" not in st.session_state:
         st.session_state.schedule_time = (datetime.now() + timedelta(hours=1)).time()
 
     st.time_input("⏰ What time does your schedule start?", key="schedule_time")
 
     schedule_time = st.session_state.schedule_time
-
     now = datetime.now()
     schedule_datetime = datetime.combine(now.date(), schedule_time)
 
