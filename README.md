@@ -93,7 +93,6 @@ The model maximizes a **custom utility score** that balances multiple factors su
 - 🧑‍🤝‍🧑 Density or crowdedness (lower is better)
 
 For each cafe \( i \), the utility score \( S_i \) is calculated as:
-
 $S_i = w_r \cdot \frac{\text{rating}_i}{5} - w_w \cdot \frac{\text{wait}_i}{20} -w_d \cdot \frac{\text{eta}_{\text{cafe→dest},i}}{20} - w_s \cdot \frac{\text{eta}_{\text{start→cafe},i}}{20} - w_c \cdot \text{density}_i$
 
 Where:
