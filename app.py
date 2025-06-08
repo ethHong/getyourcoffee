@@ -8,13 +8,18 @@ from geopy.distance import geodesic
 from geo_modules import *
 from wait_time import *
 import time
+import pytz
+
+tz = pytz.timezone("America/Los_Angeles")
+# Print out that time zone is Los Angeles
+
 
 st.set_page_config(layout="centered")
 
 st.title("Where should I get coffee today?")
 st.write("☕️ Don't wait forever for coffee right in front of your office!")
 st.write("Find the optimal coffee shop to get you in time ⏰")
-
+st.write(f"🏝️Service time zone: {tz.zone}")
 
 # 📍 Step 1: Get user input locations
 geolocator = Nominatim(user_agent="coffee_route_app")
@@ -53,13 +58,13 @@ if st.session_state["location_ready"] and not st.session_state["map_drawn"]:
 if st.session_state["map_drawn"]:
     # refresh the page to ensure the map is displayed correctly
     if "schedule_time" not in st.session_state:
-        st.session_state.schedule_time = (datetime.now() + timedelta(hours=1)).time()
+        st.session_state.schedule_time = (datetime.now(tz) + timedelta(hours=1)).time()
 
     st.time_input("⏰ What time does your schedule start?", key="schedule_time")
 
     schedule_time = st.session_state.schedule_time
-    now = datetime.now()
-    schedule_datetime = datetime.combine(now.date(), schedule_time)
+    now = datetime.now(tz)
+    schedule_datetime = datetime.combine(now.date(), schedule_time).replace(tzinfo=tz)
 
     # If the schedule time is before now, assume it's for tomorrow
     if schedule_datetime < now:
@@ -74,6 +79,7 @@ if st.session_state["map_drawn"]:
     )
 
     deadline_datetime = schedule_datetime - timedelta(minutes=buffer_minutes)
+    deadline_datetime = deadline_datetime.replace(tzinfo=tz)
 
     priority = st.selectbox(
         "🔍 What is your priority?",
@@ -86,7 +92,9 @@ if st.session_state["map_drawn"]:
 
     st.write(f"🎯 You should arrive by: **{deadline_datetime.time()}**")
     # How many minutes left?
-    minutes_left = round((deadline_datetime - datetime.now()).total_seconds() / 60.0, 2)
+    minutes_left = round(
+        (deadline_datetime - datetime.now(tz)).total_seconds() / 60.0, 2
+    )
     st.write(f"⏱️ You have {minutes_left} minutes left")
 
     # ☕️ Step 2: Confirm and find cafes
