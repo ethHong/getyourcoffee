@@ -15,6 +15,7 @@ st.title("Where should I get coffee today?")
 st.write("☕️ Don't wait forever for coffee right in front of your office!")
 st.write("Find the optimal coffee shop to get you in time ⏰")
 
+
 # 📍 Step 1: Get user input locations
 geolocator = Nominatim(user_agent="coffee_route_app")
 st.markdown("### 📍 Step 1: Enter your locations")
@@ -46,7 +47,7 @@ if st.session_state["location_ready"] and not st.session_state["map_drawn"]:
 
         time.sleep(3)  # Wait for the map to render properly
 
-    st.session_state["map_drawn"] = True
+        st.session_state["map_drawn"] = True
 
 if st.session_state["map_drawn"]:
     if "schedule_time" not in st.session_state:
