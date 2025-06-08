@@ -44,7 +44,7 @@ if st.session_state["location_ready"] and not st.session_state["map_drawn"]:
         st_folium(m, width=700, height=500)
         # Show loading spinner
 
-        time.sleep(1)  # Wait for the map to render properly
+        time.sleep(3)  # Wait for the map to render properly
 
     st.session_state["map_drawn"] = True
 

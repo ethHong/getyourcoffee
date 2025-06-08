@@ -111,7 +111,7 @@ This problem is solved using the **Gurobi Optimizer** with binary decision varia
 
 ## 2. Initial Modeling for Coffee Wait time with small amount of data
 
-With limited access to real-time wait time data, this project proposes two complementary approaches to **estimate coffee shop wait time** using public metadata from APIs (e.g., Foursquare rating, density, popularity). Both methods are built on simple assumptions to provide a fast, lightweight, and interpretable estimation.
+With limited access to real-time wait time data, this project proposes some complementary approaches to **estimate coffee shop wait time** using public metadata from APIs (e.g., Foursquare rating, density, popularity). Both methods are built on simple assumptions to provide a fast, lightweight, and interpretable estimation.
 
 ### 1. Probabilitstic baseline heuristic model 
 
@@ -207,3 +207,23 @@ Where:
 - $R$: **Rating**
 - $B$: **Baseline wait time** for the current time slot (e.g., lunch, afternoon)
 - $\alpha_1, \alpha_2, \alpha_3, \alpha_4$: weights set heuristically
+
+# Final selection of model: Generalized Sigmoid (Single Neural Network) Fitting.
+
+The problam of using creating scoring logic, and fitting with Sigmoid function was that, low & high end in terms of the score were too flat, resulting in no difference in wait time even when score difference are non-negligible. This could have been caused by too general, or simple hand-crafted rule to generate score, less likely to capture patterns with more robustness. 
+
+Initially introduced method defines raw feature to 'score' transformation with hard-coded rule, and fits Sigmoid function by taking this 'score'. However, if we use the single neurat network with sigmoid function, we can find out the best function which transforms raw data to input of sigmoid, which could be interpreted as the 'score'. 
+
+<img src="img/gen_sig.png" alt="img2" style="zoom:80%;" />
+
+1. Linear transformation: 
+   $$z = \mathbf{w}^\top \mathbf{x} + b$$
+
+2. Generalized sigmoid output: 
+   $$\hat{y} = \frac{L}{1 + \exp\left( -k (z - x_0) \right)} + \text{offset}$$
+
+Where:  
+- $$\mathbf{w} \in \mathbb{R}^n$$ (learnable weights)  
+- $$b \in \mathbb{R}$$ (bias)  
+- $$L, k, x_0, \text{offset} \in \mathbb{R}$$ (learnable sigmoid parameters)  
+- $$\hat{y} \in \mathbb{R}$$ (predicted wait time)
