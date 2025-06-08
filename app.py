@@ -132,7 +132,7 @@ if st.session_state["map_drawn"]:
                     eta2 = get_eta_minutes((cafe["lat"], cafe["lon"]), end_coords)
                     # wait_time = 5  # TODO: Replace with wait-time proxy later
                     wait_time, rating, density, sf = estimate_wait_time_NN(
-                        cafe["lat"], cafe["lon"], hour=datetime.now().hour
+                        cafe["lat"], cafe["lon"], hour=datetime.now(tz).hour
                     )
 
                     # Debug: Show the actual ETA values
@@ -165,7 +165,7 @@ if st.session_state["map_drawn"]:
             if enriched_cafes:
                 # st.success(f"🎯 Showing {len(enriched_cafes)} optimized cafe options:")
                 available_time = (
-                    deadline_datetime - datetime.now()
+                    deadline_datetime - datetime.now(tz)
                 ).total_seconds() / 60.0
 
                 best_cafe, sorted_cafes = optimize_and_rank_cafes(
@@ -232,7 +232,7 @@ if st.session_state["map_drawn"]:
                         + fallback_cafe["wait_time"]
                         + fallback_cafe["eta_cafe_to_dest"]
                     )
-                    required_arrival = datetime.now() + timedelta(
+                    required_arrival = datetime.now(tz) + timedelta(
                         minutes=total_required_time
                     )
                     lateness = (
