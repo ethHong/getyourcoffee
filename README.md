@@ -100,19 +100,20 @@ Sᵢ = w_r · (ratingᵢ / 5)
    - w_d · (eta_{cafe→dest,ᵢ} / 20)
    - w_s · (eta_{start→cafe,ᵢ} / 20)
    - w_c · densityᵢ
-
+```
 
 Where:
+
 - $w_r$: Weight for rating
 - $w_w$: Weight for wait time
 - $w_d$: Weight for ETA to destination
 - $w_s$: Weight for ETA from start
 - $w_c$: Weight for density
 
+
 These weights vary depending on the selected user **priority_option**.
 
 The objective is: $\max \sum_{i=1}^{n} x_i \cdot S_i$
-```
 
 ### 🧠 Solver
 
