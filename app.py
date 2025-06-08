@@ -31,9 +31,14 @@ if "map_drawn" not in st.session_state:
 
 if start_coords and end_coords and not st.session_state["location_ready"]:
     st.session_state["location_ready"] = True
-    st.rerun()
+
 
 if st.session_state["location_ready"] and not st.session_state["map_drawn"]:
+    st.markdown("#### Check location and confirm")
+    if st.button("🔄 Click here to confirm and continue."):
+        st.session_state["map_drawn"] = True
+        st.rerun()
+
     with st.spinner("📍 verifying location"):
         m = folium.Map(location=start_coords, zoom_start=13)
         folium.Marker(
@@ -43,13 +48,10 @@ if st.session_state["location_ready"] and not st.session_state["map_drawn"]:
             end_coords, tooltip="Destination", icon=folium.Icon(color="red")
         ).add_to(m)
         st_folium(m, width=700, height=500)
-        # Show loading spinner
 
-        time.sleep(3)  # Wait for the map to render properly
-
-        st.session_state["map_drawn"] = True
 
 if st.session_state["map_drawn"]:
+    # refresh the page to ensure the map is displayed correctly
     if "schedule_time" not in st.session_state:
         st.session_state.schedule_time = (datetime.now() + timedelta(hours=1)).time()
 
